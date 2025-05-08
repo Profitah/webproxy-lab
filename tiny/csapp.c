@@ -867,7 +867,7 @@ ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n)
 /* 
  * rio_readlineb - Robustly read a text line (buffered)
  */
-/* $begin rio_readlineb */
+/* $begin rio_readlineb */ // 자체 저장공간 생성
 ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen) 
 {
     int n, rc;

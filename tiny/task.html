@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /> <!-- 문서 문자 인코딩 설정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- 반응형 화면을 위한 설정 -->
+</head>
+<body>
+
+  <!-- 사용자 입력 폼 -->
+  <form id="myForm">
+    <input type="number" id="first_num" placeholder="첫 번째 숫자" /> <!-- 첫 번째 숫자 입력창 -->
+    <input type="number" id="second_num" placeholder="두 번째 숫자" /> <!-- 두 번째 숫자 입력창 -->
+    <button type="submit">전송</button> <!-- 제출 버튼 -->
+  </form>
+
+  <!-- 결과를 출력할 영역 -->
+  <div id="output"></div>
+
+  <script>
+    // ===== 요소 선택 =====
+    const firstInput = document.querySelector("#first_num");  // 첫 번째 입력창 가져오기
+    const secondInput = document.querySelector("#second_num"); // 두 번째 입력창 가져오기
+    const form = document.querySelector("#myForm"); // 폼 요소 가져오기
+    const outputDiv = document.querySelector("#output"); // 출력 영역 가져오기
+
+    // ===== 폼 제출 이벤트 핸들러 등록 =====
+    form.addEventListener("submit", (e) => {
+      e.preventDefault(); // 폼의 기본 동작(페이지 새로고침) 막기
+
+      const a = firstInput.value; // 첫 번째 입력값 가져오기
+      const b = secondInput.value; // 두 번째 입력값 가져오기
+
+      // --- [1] 입력 유효성 검사 ---
+      if (!a || !b) { // 입력값 중 하나라도 비어 있으면
+        alert("두 숫자를 모두 입력하세요."); // 경고 표시
+        return; // 함수 종료
+      }
+
+      // --- [2] 쿼리스트링 생성 및 URL에 반영 ---
+      const queryString = `?${a}&${b}`; // "?숫자1&숫자2" 형식으로 쿼리스트링 생성
+      history.pushState(null, "", queryString); // 브라우저 주소창의 URL 변경 (새로고침 없이)
+
+      // --- [3] URL 쿼리스트링에서 숫자 추출 및 출력 ---
+      const rawQuery = window.location.search.substring(1); // '?' 제거 후 쿼리스트링만 추출
+      const [num1, num2] = rawQuery.split("&"); // '&' 기준으로 숫자 2개 나누기
+
+      const sum = Number(num1) + Number(num2); // 두 수의 합 계산 (문자열을 숫자로 변환 후 더함)
+
+      // 결과를 <div>에 큰 글자로 출력
+      outputDiv.innerHTML = `
+        <h1>첫 번째 숫자: ${num1}</h1>
+        <h1>두 번째 숫자: ${num2}</h1>
+        <h1>두 수의 합: ${sum}</h1>
+      `;
+
+      // --- [4] 입력창 초기화 ---
+      form.reset(); // 폼 초기화 (입력창 비우기)
+
+      // --- [5] 서버에 GET 요청 전송 ---
+      fetch(`http://localhost:8000/cgi-bin/adder?${a}&${b}`) // tiny 서버로 GET 요청
+        .then((response) => response.text()) // 응답 데이터를 텍스트로 받기
+        .then((data) => {
+          console.log("서버 응답:", data); // 서버 응답을 콘솔에 출력
+        })
+        .catch((err) => {
+          console.error("에러 발생", err); // 요청 실패 시 에러 메시지 출력
+        });
+    });
+  </script>
+
+</body>
+</html>

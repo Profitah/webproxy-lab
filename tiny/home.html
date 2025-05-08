@@ -1,7 +1,74 @@
+<!DOCTYPE html>
 <html>
-<head><title>test</title></head>
-<body> 
-<img align="middle" src="godzilla.gif">
-Dave O'Hallaron
+<head>
+  <meta charset="UTF-8">
+  <title>Tiny Server Test</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-top: 40px;
+    }
+
+    .video-wrapper {
+      display: flex;
+      justify-content: center;
+      margin: 40px 0;
+    }
+
+    .swiper {
+      width: 640px;
+      height: 360px;
+      margin: 40px auto;
+    }
+
+    .swiper-slide img {
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>By Dave O'Hallaron</h1>
+
+  <!-- Swiper 슬라이드 -->
+  <div class="swiper">
+    <div class="swiper-wrapper">
+      <div class="swiper-slide"><img src="godzilla.gif" alt="이미지1"></div>
+      <div class="swiper-slide"><img src="godzilla.gif" alt="이미지2"></div>
+      <div class="swiper-slide"><img src="godzilla.gif" alt="이미지3"></div>
+    </div>
+  </div>
+
+  <!-- 영상 -->
+  <div class="video-wrapper">
+    <video width="640" height="480" controls>
+      <source src="cat.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <!-- Swiper 라이브러리 JS -->
+  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+  <script>
+    const swiper = new Swiper('.swiper', {
+      loop: true,
+      autoplay: {
+        delay: 2000,
+        disableOnInteraction: false,
+      },
+    });
+  </script>
+
 </body>
 </html>

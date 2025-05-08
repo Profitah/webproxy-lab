@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>프록시 서버 SIGPIPE 문제 해결 발표</title>
+  <style>
+    body {
+      font-size: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #111;
+      color: #f5f5f5;
+    }
+    section {
+      display: none;
+      padding: 60px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    section.active {
+      display: block;
+    }
+    h1, h2 {
+      font-size: 32px;
+      color: #FFD700;
+    }
+    .highlight {
+      background: #333;
+      padding: 10px;
+      border-left: 5px solid #FFD700;
+      margin: 20px 0;
+    }
+    .code {
+      font-size: 16px;
+      background: #222;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      margin: 20px 0;
+    }
+    .footer {
+      font-size: 16px;
+      position: absolute;
+      bottom: 30px;
+      right: 40px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<section class="active">
+  <h1>프록시 서버 배포 중 발생한 문제</h1>
+  <div class="highlight">
+    EC2에 배포한 프록시 서버에서 새로고침을 반복하면 <strong>서버가 종료</strong>되는 문제가 발생
+  </div>
+  <div class="footer">1 / 6</div>
+</section>
+
+<section>
+  <h2>문제 원인: SIGPIPE 시그널</h2>
+  <ul>
+    <li>클라이언트가 먼저 연결을 끊었는데</li>
+    <li>서버는 그 소켓에 <code>write()</code>를 시도 → SIGPIPE 시그널 발생 → <strong>서버 종료</strong></li>
+  </ul>
+  <div class="footer">2 / 6</div>
+</section>
+
+<section>
+  <h2>해결 방법</h2>
+  <p class="code">Signal(SIGPIPE, SIG_IGN);</p>
+  <div class="highlight">
+    <strong>SIGPIPE 무시</strong> → write() 실패 시 에러 코드 반환<br>
+    → 서버 종료 대신 예외 처리 가능
+  </div>
+  <div class="footer">3 / 6</div>
+</section>
+
+<section>
+  <h2>이 설정이 불러올 수 있는 위험</h2>
+  <ul>
+    <li><code>write()</code> 실패를 무시하면 <strong>오류 상태를 간과</strong>할 수 있음</li>
+    <li>로그 없이 조용히 무시될 경우 <strong>디버깅 어려움 증가</strong></li>
+    <li>모든 통신 오류가 무시되면 <strong>리소스 낭비 및 상태 불일치</strong> 발생</li>
+  </ul>
+  <div class="highlight">
+    무시한 이후에는 <strong>반드시 예외 처리</strong>를 해주는 로직이 필요
+  </div>
+  <div class="footer">4 / 6</div>
+</section>
+
+<section>
+  <h2>부하 테스트 결과</h2>
+  <div class="highlight">
+    wrk 사용 결과:<br>
+    4 threads, 50 connections <br>
+    <strong>수천 개 요청에도 서버 종료 없이 정상 작동</strong>
+  </div>
+  <pre class="code">
+Running 10s test @ http://13.125.26.144:8080/home.html
+  4 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    80.34ms   16.15ms 119.37ms   85.57%
+    Req/Sec   117.69     35.06   161.00     88.46%
+  305 requests in 10.01s, 94.42KB read
+  Socket errors: connect 0, read 41, write 47313, timeout 0
+  Non-2xx or 3xx responses: 305
+Requests/sec:     30.47
+Transfer/sec:      9.43KB
+  </pre>
+  <div class="highlight">
+    ⚠️ 하지만 앞으로 고려할 문제점<br>
+    - 비정상 응답(Non-2xx 응답): 응답 실패 가능성 존재<br>
+    - Socket write error: 클라이언트가 빨리 끊을 경우 여전히 부하 발생<br>
+    - 캐시 미사용시 성능 하락 가능성
+  </div>
+  <div class="footer">5 / 6</div>
+</section>
+
+
+<section>
+  <h2>정리하며</h2>
+  <p>
+    테스트 케이스 통과만 봤다면 모르고 넘어갔을 부분이었지만<br>
+    직접  서버를 배포해서 확인을 해봐서 해당 코드의 문제 점을 알게되었다.
+  </p>
+  <div class="footer">6 / 6</div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll('section');
+  let current = 0;
+  document.body.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      if (current < slides.length - 1) {
+        slides[current++].classList.remove('active');
+        slides[current].classList.add('active');
+      }
+    }
+    if (e.key === 'ArrowLeft') {
+      if (current > 0) {
+        slides[current--].classList.remove('active');
+        slides[current].classList.add('active');
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

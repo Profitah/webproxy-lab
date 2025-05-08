@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 #
 # driver.sh - This is a simple autograder for the Proxy Lab. It does
 #     basic sanity checks that determine whether or not the code
@@ -80,23 +80,13 @@ function clear_dirs {
 #
 function wait_for_port_use() {
     timeout_count="0"
-    portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
-        | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-        | grep -E "[0-9]+" | uniq | tr "\n" " "`
-
-    echo "${portsinuse}" | grep -wq "${1}"
-    while [ "$?" != "0" ]
+    while ! lsof -i tcp:$1 > /dev/null 2>&1
     do
-        timeout_count=`expr ${timeout_count} + 1`
+        timeout_count=$((timeout_count + 1))
         if [ "${timeout_count}" == "${MAX_PORT_TRIES}" ]; then
             kill -ALRM $$
         fi
-
         sleep 1
-        portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
-            | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-            | grep -E "[0-9]+" | uniq | tr "\n" " "`
-        echo "${portsinuse}" | grep -wq "${1}"
     done
 }
 
@@ -105,32 +95,22 @@ function wait_for_port_use() {
 # free_port - returns an available unused TCP port 
 #
 function free_port {
-    # Generate a random port in the range [PORT_START,
-    # PORT_START+MAX_RAND]. This is needed to avoid collisions when many
-    # students are running the driver on the same machine.
     port=$((( RANDOM % ${MAX_RAND}) + ${PORT_START}))
 
-    while [ TRUE ] 
+    while [ TRUE ]
     do
-        portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
-            | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-            | grep -E "[0-9]+" | uniq | tr "\n" " "`
-
-        echo "${portsinuse}" | grep -wq "${port}"
-        if [ "$?" == "0" ]; then
-            if [ $port -eq ${PORT_MAX} ]
-            then
+        if lsof -i tcp:${port} > /dev/null 2>&1; then
+            if [ $port -eq ${PORT_MAX} ]; then
                 echo "-1"
                 return
             fi
-            port=`expr ${port} + 1`
+            port=$((port + 1))
         else
             echo "${port}"
             return
         fi
     done
 }
-
 
 #######
 # Main 
@@ -406,4 +386,3 @@ maxScore=`expr ${MAX_BASIC} + ${MAX_CACHE} + ${MAX_CONCURRENCY}`
 echo ""
 echo "totalScore: ${totalScore}/${maxScore}"
 exit
-
